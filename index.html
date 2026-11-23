@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>הזנת מפתח מאובטחת</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&family=Rubik:wght@500;600;700&display=swap">
+<style>
+:root{
+  --bg:#eef1f6; --card:#ffffff; --fg:#131a25; --muted:#586477; --line:#d6dde8; --field:#f6f8fb;
+  --accent:#0b7a75; --accent-fg:#ffffff; --good:#19874a; --crit:#c2312a;
+  --display:'Rubik','Heebo',system-ui,sans-serif; --body:'Heebo',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0c1117; --card:#171f2a; --fg:#e8edf4; --muted:#93a0b4; --line:#2b3746; --field:#0f151d;
+  --accent:#3fc4bc; --accent-fg:#05201e; --good:#4fc581; --crit:#ff7068; color-scheme:dark;
+}}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.55;
+  display:grid;place-items:center;padding:24px 16px}
+.card{width:min(440px,100%);background:var(--card);border-radius:28px;padding:32px 28px 24px;
+  box-shadow:0 24px 60px -30px rgba(10,20,40,.45);display:flex;flex-direction:column;gap:20px;text-align:center}
+.ico{width:88px;height:88px;border-radius:22.5%;margin:0 auto;display:grid;place-items:center;color:#fff;
+  font-family:var(--display);font-weight:600;font-size:30px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 14px 24px -12px rgba(0,0,0,.5)}
+h1{font-family:var(--display);font-size:24px;font-weight:700;margin:0;text-wrap:balance}
+.lead{margin:6px 0 0;color:var(--muted)}
+.lead b{color:var(--fg);font-weight:600}
+form{display:flex;flex-direction:column;gap:12px;text-align:start}
+label{font-size:14px;color:var(--muted)}
+.field{position:relative}
+input{width:100%;font:inherit;color:var(--fg);background:var(--field);border:1.5px solid var(--line);
+  border-radius:14px;padding:14px 16px;padding-right:76px;direction:ltr;text-align:left;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:15px}
+input:focus{outline:none;border-color:var(--accent)}
+.toggle{position:absolute;top:6px;bottom:6px;right:6px;border:0;background:transparent;color:var(--accent);
+  font:inherit;font-size:14px;font-weight:600;padding:0 12px;border-radius:10px;cursor:pointer}
+button.main{font:inherit;font-weight:600;font-size:17px;border:0;border-radius:14px;padding:14px;cursor:pointer;
+  background:var(--accent);color:var(--accent-fg)}
+button.main:disabled{opacity:.55;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.timer{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.timer.low{color:var(--crit)}
+.err{color:var(--crit);font-size:14px;min-height:1.4em;margin:0}
+.facts{list-style:none;margin:0;padding:16px 0 0;border-top:1px solid var(--line);display:flex;flex-direction:column;
+  gap:6px;font-size:13.5px;color:var(--muted);text-align:start}
+.mark{width:72px;height:72px;border-radius:50%;margin:0 auto;display:grid;place-items:center;font-size:34px;color:#fff}
+.mark.ok{background:var(--good)} .mark.bad{background:var(--crit)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main class="card" id="card">
+  <section id="loading"><p class="lead">בודק את הקישור…</p></section>
+
+  <section id="ready" hidden>
+    <div class="ico" id="ico"></div>
+    <div style="margin-top:16px">
+      <h1>מפתח API עבור <span id="sysName"></span></h1>
+      <p class="lead">שלום <b id="mgrName"></b>. הדביקו כאן את המפתח, והוא יישמר מוצפן בכספת של החברה.</p>
+    </div>
+    <form id="form" style="margin-top:20px" autocomplete="off">
+      <label for="key">מפתח ה-API</label>
+      <div class="field">
+        <input id="key" name="key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" required minlength="8">
+        <button type="button" class="toggle" id="toggle">הצג</button>
+      </div>
+      <p class="err" id="err" role="alert"></p>
+      <button class="main" id="submit" type="submit">שמירה בכספת</button>
+      <div class="timer" id="timer" style="text-align:center"></div>
+    </form>
+    <ul class="facts" style="margin-top:20px">
+      <li>הקישור חד-פעמי, ותקף 10 דקות מרגע שנוצר.</li>
+      <li>אחרי השמירה אף אחד לא רואה את המפתח, גם לא במסך השליטה.</li>
+      <li>עדיף מפתח לקריאה בלבד, אם התוכנה מאפשרת.</li>
+    </ul>
+  </section>
+
+  <section id="done" hidden>
+    <div class="mark ok">✓</div>
+    <h1 style="margin-top:16px">המפתח נשמר</h1>
+    <p class="lead">המפתח של <b id="doneName"></b> שמור בכספת (מסתיים ב-<bdi id="last4"></bdi>). אפשר לסגור את הדף ולחזור ל-Claude.</p>
+  </section>
+
+  <section id="bad" hidden>
+    <div class="mark bad">!</div>
+    <h1 style="margin-top:16px" id="badTitle">הקישור לא תקף</h1>
+    <p class="lead" id="badText"></p>
+  </section>
+</main>
+
+<script>
+// כתובת ה-API בפרויקט subtrack.
+const API = 'https://bowbnzkqgynjcmeosvtv.supabase.co/functions/v1/key-link';
+
+const $ = id => document.getElementById(id);
+// הטוקן נשמר רק בלשונית הזאת, כדי שרענון אחרי תקלת חיבור לא יאבד את הקישור.
+// אם הדפדפן חוסם אחסון, הדף עדיין עובד; רק הרענון לא ישחזר את הקישור.
+const TOKEN_KEY = 'hub-key-link';
+function readStored(){ try { return sessionStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } }
+function storeToken(value){ try { sessionStorage.setItem(TOKEN_KEY, value); } catch (e) { /* ראו למעלה */ } }
+function forgetToken(){ try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) { /* ראו למעלה */ } }
+const token = location.hash.slice(1) || readStored();
+storeToken(token);
+// מסירים את הטוקן משורת הכתובת כדי שלא יישאר בהיסטוריה או בצילום מסך.
+try { history.replaceState(null, '', location.pathname); } catch (e) { /* דפדפן ישן: הטוקן נשאר בשורת הכתובת */ }
+
+function show(id){ for (const s of ['loading','ready','done','bad']) $(s).hidden = s !== id; }
+function bad(reason){
+  if (reason !== 'network') forgetToken();
+  const text = {
+    used: 'כבר השתמשו בקישור הזה. אם צריך להחליף מפתח, בקשו מ-Claude קישור חדש.',
+    expired: 'עברו יותר מ-10 דקות מאז שהקישור נוצר. בקשו מ-Claude קישור חדש.',
+    not_found: 'הקישור לא מוכר. ודאו שהעתקתם אותו במלואו, או בקשו מ-Claude קישור חדש.',
+    network: 'לא הצלחנו להתחבר לשרת. בדקו את החיבור לאינטרנט ונסו לרענן.'
+  };
+  $('badTitle').textContent = reason === 'network' ? 'אין חיבור לשרת' : reason === 'used' ? 'הקישור כבר נוצל' : reason === 'expired' ? 'פג תוקף הקישור' : 'הקישור לא תקף';
+  $('badText').textContent = text[reason] || text.not_found;
+  show('bad');
+}
+async function call(body){
+  const r = await fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error('http');
+  return r.json();
+}
+
+let tick;
+function startTimer(expiresAt){
+  const end = Date.parse(expiresAt);
+  const draw = () => {
+    const left = Math.max(0, Math.round((end - Date.now()) / 1000));
+    if (left <= 0) { clearInterval(tick); bad('expired'); return; }
+    $('timer').textContent = 'הקישור יפוג בעוד ' + Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+    $('timer').classList.toggle('low', left < 120);
+  };
+  draw(); tick = setInterval(draw, 1000);
+}
+
+(async () => {
+  if (!/^[0-9a-f]{64}$/.test(token)) { bad('not_found'); return; }
+  let info;
+  try { info = await call({ action: 'info', token }); } catch (e) { bad('network'); return; }
+  if (!info.valid) { bad(info.reason); return; }
+  const icon = info.icon || {};
+  const hue = Number.isFinite(Number(icon.hue)) ? Number(icon.hue) : 200;
+  $('ico').style.background = 'linear-gradient(145deg,hsl(' + hue + ' 72% 58%),hsl(' + ((hue + 28) % 360) + ' 78% 40%))';
+  $('ico').textContent = icon.emoji || String(info.system).trim().slice(0, 2);
+  $('sysName').textContent = info.system;
+  $('mgrName').textContent = info.manager;
+  document.title = 'מפתח API עבור ' + info.system;
+  startTimer(info.expires_at);
+  show('ready');
+  $('key').focus();
+})();
+
+$('toggle').addEventListener('click', () => {
+  const k = $('key'); const hidden = k.type === 'password';
+  k.type = hidden ? 'text' : 'password';
+  $('toggle').textContent = hidden ? 'הסתר' : 'הצג';
+});
+
+$('form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const key = $('key').value.trim();
+  $('err').textContent = '';
+  if (key.length < 8) { $('err').textContent = 'המפתח קצר מדי. ודאו שהדבקתם אותו במלואו.'; return; }
+  $('submit').disabled = true; $('submit').textContent = 'שומר…';
+  let res;
+  try { res = await call({ action: 'submit', token, key }); }
+  catch (err) {
+    $('err').textContent = 'השמירה נכשלה בגלל בעיית חיבור. המפתח לא נשמר; נסו שוב.';
+    $('submit').disabled = false; $('submit').textContent = 'שמירה בכספת'; return;
+  }
+  if (res.ok) {
+    clearInterval(tick); $('key').value = ''; forgetToken();
+    $('doneName').textContent = res.system; $('last4').textContent = res.last4;
+    show('done'); return;
+  }
+  if (res.reason === 'bad_key') {
+    $('err').textContent = 'המפתח לא נראה תקין (קצר או ארוך מדי). בדקו והדביקו שוב.';
+    $('submit').disabled = false; $('submit').textContent = 'שמירה בכספת'; return;
+  }
+  clearInterval(tick); bad(res.reason);
+});
+</script>
+</body>
+</html>
