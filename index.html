@@ -74,6 +74,7 @@ button.main:disabled{opacity:.55;cursor:default}
       <div class="timer" id="timer" style="text-align:center"></div>
     </form>
     <ul class="facts" style="margin-top:20px">
+      <li id="vendorNote" hidden></li>
       <li>הקישור חד-פעמי, ותקף 10 דקות מרגע שנוצר.</li>
       <li>אחרי השמירה אף אחד לא רואה את המפתח, גם לא במסך השליטה.</li>
       <li>עדיף מפתח לקריאה בלבד, אם התוכנה מאפשרת.</li>
@@ -83,7 +84,8 @@ button.main:disabled{opacity:.55;cursor:default}
   <section id="done" hidden>
     <div class="mark ok">✓</div>
     <h1 style="margin-top:16px">המפתח נשמר</h1>
-    <p class="lead">המפתח של <b id="doneName"></b> שמור בכספת (מסתיים ב-<bdi id="last4"></bdi>). אפשר לסגור את הדף ולחזור ל-Claude.</p>
+    <p class="lead">המפתח של <b id="doneName"></b> שמור בכספת (מסתיים ב-<bdi id="last4"></bdi>). אפשר לסגור את הדף.</p>
+    <p class="lead" id="doneChecked"></p>
   </section>
 
   <section id="bad" hidden>
@@ -151,6 +153,10 @@ function startTimer(expiresAt){
   $('ico').textContent = icon.emoji || String(info.system).trim().slice(0, 2);
   $('sysName').textContent = info.system;
   $('mgrName').textContent = info.manager;
+  if (info.vendor) {
+    $('vendorNote').textContent = 'לפני השמירה המפתח ייבדק מול ' + info.vendor + '. מפתח שלא עובד לא יישמר.';
+    $('vendorNote').hidden = false;
+  }
   document.title = 'מפתח API עבור ' + info.system;
   startTimer(info.expires_at);
   show('ready');
@@ -178,7 +184,14 @@ $('form').addEventListener('submit', async e => {
   if (res.ok) {
     clearInterval(tick); $('key').value = ''; forgetToken();
     $('doneName').textContent = res.system; $('last4').textContent = res.last4;
+    if (res.checked_with) $('doneChecked').textContent = 'המפתח נבדק מול ' + res.checked_with + ' ועובד.';
     show('done'); return;
+  }
+  if (res.reason === 'rejected' || res.reason === 'unreachable') {
+    $('err').textContent = res.reason === 'rejected'
+      ? (res.vendor || 'התוכנה') + ' דחתה את המפתח, ולכן הוא לא נשמר. בדקו שהעתקתם אותו במלואו ושהוא עדיין פעיל.'
+      : 'לא הצלחנו לבדוק את המפתח מול ' + (res.vendor || 'התוכנה') + ' כרגע. המפתח לא נשמר; נסו שוב בעוד דקה.';
+    $('submit').disabled = false; $('submit').textContent = 'שמירה בכספת'; return;
   }
   if (res.reason === 'bad_key') {
     $('err').textContent = 'המפתח לא נראה תקין (קצר או ארוך מדי). בדקו והדביקו שוב.';
