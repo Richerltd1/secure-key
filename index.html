@@ -180,7 +180,8 @@ $('form').addEventListener('submit', async e => {
   if (res.ok) {
     clearInterval(tick); $('key').value = ''; forgetToken();
     $('doneName').textContent = res.system; $('last4').textContent = res.last4;
-    if (res.checked_with) $('doneChecked').textContent = 'המפתח נבדק מול ' + res.checked_with + ' ועובד.';
+    if (res.note === 'ip_blocked') $('doneChecked').textContent = res.vendor + ' לא אפשרה לבדוק את המפתח כרגע, כי היא חוסמת את כתובת השרת שלנו. המפתח נשמר, אבל עוד לא אומת. כדי שנוכל למשוך נתוני שימוש, בעל המערכת צריך לאשר את כתובת השרת בלוח הבקרה של ' + res.vendor + '.';
+    else if (res.checked_with) $('doneChecked').textContent = 'המפתח נבדק מול ' + res.checked_with + ' ועובד.';
     show('done'); return;
   }
   if (res.reason === 'rejected' || res.reason === 'unreachable') {
